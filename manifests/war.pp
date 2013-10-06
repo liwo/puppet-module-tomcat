@@ -5,7 +5,7 @@ define tomcat::war(
   $warfile = undef,
   $replace = false,
 ) {
-  $deploy_symlink = "${tomcat::params::autodeploy_dir}/${name}"
+  $deploy_symlink = "${tomcat::autodeploy_dir}/${name}"
 
   # Retrieve (and enforce) the *.war name component of the source
   $use_warfile = $warfile ? {
@@ -17,7 +17,7 @@ define tomcat::war(
   # Use the staging directory + the warfile name as the default staging
   # location
   $use_staging = $staging ? {
-    undef   => "${tomcat::params::staging_dir}/${use_warfile}.d",
+    undef   => "${tomcat::staging_dir}/${use_warfile}.d",
     default => $staging,
   }
 
@@ -56,7 +56,7 @@ define tomcat::war(
         before      => [
           Staging::Extract[$use_warfile],
           File[$use_staging],
-          File["${tomcat::params::autodeploy_dir}/${name}"],
+          File["${tomcat::autodeploy_dir}/${name}"],
         ],
       }
 
