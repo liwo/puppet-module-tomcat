@@ -1,5 +1,8 @@
 class tomcat::params {
 
+  $port = 8080
+  $ssl_port = 8443
+
   case $::osfamily {
     default: { fail("unsupported OS: ${::osfamily}") }
     'RedHat': {
