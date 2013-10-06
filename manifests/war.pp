@@ -4,6 +4,7 @@ define tomcat::war(
   $staging = undef,
   $warfile = undef,
   $replace = false,
+  $extract = true,
 ) {
   $deploy_symlink = "${tomcat::autodeploy_dir}/${name}"
 
@@ -32,40 +33,68 @@ define tomcat::war(
         provider => shell,
       }
 
-      # For war files the staging module extracts to cwd, so ensure the dir.
-      file { $use_staging:
-        ensure => directory,
-        before => Staging::Extract[$use_warfile],
-      }
+      if $extract {
 
-      # Staging::Deploy is a combo declaring Staging::File and Staging::Extract
-      staging::deploy { $use_warfile:
-        source  => $source,
-        target  => $use_staging,
-        unless  => "[ \"`ls -A ${use_staging} 2>/dev/null`\" ]",
-        notify  => Service['tomcat'],
-        require => Package['tomcat'],
-      }
+        # For war files the staging module extracts to cwd, so ensure the dir.
+        file { $use_staging:
+          ensure => directory,
+          before => Staging::Extract[$use_warfile],
+        }
 
-      # For in-place upgrades. Clean out any old install before extracting the
-      # new one.
-      exec { "purge_tomcat_war_${title}":
-        command     => shellquote('/bin/rm', '-rf', $use_staging),
-        refreshonly => true,
-        subscribe   => Staging::File[$use_warfile],
-        before      => [
-          Staging::Extract[$use_warfile],
-          File[$use_staging],
-          File["${tomcat::autodeploy_dir}/${name}"],
-        ],
-      }
+        # Staging::Deploy is a combo declaring Staging::File and Staging::Extract
+        staging::deploy { $use_warfile:
+          source  => $source,
+          target  => $use_staging,
+          unless  => "[ \"`ls -A ${use_staging} 2>/dev/null`\" ]",
+          notify  => Service['tomcat'],
+          require => Package['tomcat'],
+        }
 
-      # To make the thing live, use a symlink in the autodeploy directory
-      file { $deploy_symlink:
-        ensure  => symlink,
-        target  => $use_staging,
-        require => Staging::Extract[$use_warfile],
-        notify  => Service['tomcat'],
+        # For in-place upgrades. Clean out any old install before extracting the
+        # new one.
+        exec { "purge_tomcat_war_${title}":
+          command     => shellquote('/bin/rm', '-rf', $use_staging),
+          refreshonly => true,
+          subscribe   => Staging::File[$use_warfile],
+          before      => [
+            Staging::Extract[$use_warfile],
+            File[$use_staging],
+            File["${tomcat::autodeploy_dir}/${name}"],
+          ],
+        }
+
+        # To make the thing live, use a symlink in the autodeploy directory
+        file { $deploy_symlink:
+          ensure  => symlink,
+          target  => $use_staging,
+          require => Staging::Extract[$use_warfile],
+          notify  => Service['tomcat'],
+        }
+
+      } else {
+        $staging_warfile = "${tomcat::staging_dir}/${use_warfile}"
+        staging::file { $use_warfile:
+          source  => $source,
+          target  => $staging_warfile,
+          notify  => Service['tomcat'],
+          require => Package['tomcat'],
+        }
+
+        # To make the thing live, use a symlink in the autodeploy directory
+        file { "${deploy_symlink}.war":
+          ensure  => symlink,
+          target  => $staging_warfile,
+          require => Staging::File[$use_warfile],
+          notify  => Service['tomcat'],
+        }
+
+        # To have tomcat autodeploy the war again the old deployment must be deleted
+        exec { "rm -r $deploy_symlink":
+          onlyif => "[ -d $deploy_symlink ]",
+          refreshonly => true,
+          path => '/usr/bin:/bin',
+          subscribe => Staging::File[$use_warfile],
+        }
       }
 
       # Optionally, always enforce the contents of the warfile. This stanza
