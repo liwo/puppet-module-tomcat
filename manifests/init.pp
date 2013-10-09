@@ -32,6 +32,7 @@ class tomcat (
       changes => [
         "set JAVA_HOME $java_home",
       ],
+      require => Package['tomcat'],
       notify => Service['tomcat'],
     }
   }
@@ -42,6 +43,7 @@ class tomcat (
       changes => [
         "set AUTHBIND yes",
       ],
+      require => Package['tomcat'],
       notify => Service['tomcat'],
     }
   }
@@ -62,6 +64,7 @@ class tomcat (
       changes => [
         "set JAVA_OPTS '\"$java_opts_line\"'",
       ],
+      require => Package['tomcat'],
       notify => Service['tomcat'],
     }
   }
