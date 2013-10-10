@@ -38,36 +38,38 @@ class tomcat (
   }
 
   if $port < 1024 {
-    augeas { "tomcat-authbind":
-      context => "/files/etc/default/$package",
-      changes => [
-        "set AUTHBIND yes",
-      ],
-      require => Package['tomcat'],
-      notify => Service['tomcat'],
-    }
+    $authbind = 'yes'
+  } else {
+    $authbind = 'no'
+  }
+  augeas { "tomcat-authbind":
+    context => "/files/etc/default/$package",
+    changes => [
+      "set AUTHBIND $authbind",
+    ],
+    require => Package['tomcat'],
+    notify => Service['tomcat'],
   }
 
-  if $java_opts or $xms or $xmx {
-    $java_opts_xmx = $xmx ? {
-      undef => '',
-      default => "-Xmx$xmx",
-    }
-    $java_opts_xms = $xms ? {
-      undef => '',
-      default => "-Xms$xms",
-    }
-    $java_opts_line = "-Djava.awt.headless=true -XX:+UseConcMarkSweepGC $java_opts_xmx $java_opts_xms $java_opts"
-
-    augeas { "tomcat-java_opts":
-      context => "/files/etc/default/$package",
-      changes => [
-        "set JAVA_OPTS '\"$java_opts_line\"'",
-      ],
-      require => Package['tomcat'],
-      notify => Service['tomcat'],
-    }
+  $java_opts_xmx = $xmx ? {
+    undef => '',
+    default => "-Xmx$xmx",
   }
+  $java_opts_xms = $xms ? {
+    undef => '',
+    default => "-Xms$xms",
+  }
+  $java_opts_line = "-Djava.awt.headless=true -XX:+UseConcMarkSweepGC $java_opts_xmx $java_opts_xms $java_opts"
+
+  augeas { "tomcat-java_opts":
+    context => "/files/etc/default/$package",
+    changes => [
+      "set JAVA_OPTS '\"$java_opts_line\"'",
+    ],
+    require => Package['tomcat'],
+    notify => Service['tomcat'],
+  }
+
 
   file { "/etc/$package/server.xml":
     content => template('tomcat/server.xml.erb'),
