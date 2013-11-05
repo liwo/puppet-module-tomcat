@@ -72,7 +72,13 @@
     <Connector port="<%= @port %>" protocol="HTTP/1.1"
                connectionTimeout="20000"
                URIEncoding="UTF-8"
-               redirectPort="<%= @ssl_port %>" />
+               redirectPort="<%= @ssl_port %>"
+               <%- if @connector_options -%>
+               <%- @connector_options.each do | option, value | -%>
+               <%= option %>="<%= value %>"
+               <%- end -%>
+               <%- end -%>
+               />
     <!-- A "Connector" using the shared thread pool-->
     <!--
     <Connector executor="tomcatThreadPool"

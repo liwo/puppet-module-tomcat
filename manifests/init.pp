@@ -3,6 +3,7 @@ class tomcat (
   $package = $tomcat::params::tomcat_package,
   $port = $tomcat::params::port,
   $ssl_port = $tomcat::params::ssl_port,
+  $connector_options = undef,
   $java_opts = undef,
   $xms = undef,
   $xmx = '128m',
