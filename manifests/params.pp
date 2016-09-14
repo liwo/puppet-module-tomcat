@@ -43,6 +43,17 @@ class tomcat::params {
           'user'            => 'tomcat7',
           'user_homedir'    => '/usr/share/tomcat7',
         },
+        'tomcat8' => {
+          'admin_package'   => 'tomcat8-admin',
+          'autodeploy_dir'  => '/var/lib/tomcat8/webapps',
+          'docs_package'    => 'tomcat8-docs',
+          'group'           => 'tomcat8',
+          'service'         => 'tomcat8',
+          'staging_dir'     => '/var/lib/tomcat8/staging',
+          'tomcat_package'  => 'tomcat8',
+          'user'            => 'tomcat8',
+          'user_homedir'    => '/usr/share/tomcat8',
+        },
       }
       $admin_package   = 'tomcat6-admin'
       $autodeploy_dir  = '/var/lib/tomcat6/webapps'

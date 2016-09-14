@@ -27,7 +27,33 @@ class tomcat (
     before => Service['tomcat'],
   }
 
-  if $::osfamily == 'Debian' and $package == 'tomcat7' {
+	# Fix tomcat service not starting after package installation on oracle java
+	if $::lsbdistcodename == 'xenial' and $::java::distribution =~ 'oracle' {
+		include ::systemd
+
+		file { "/etc/systemd/system/${service}.service.d":
+			ensure => 'directory',
+			owner => 'root',
+			group => 'root',
+			mode => '0644',
+			before => Package['tomcat'],
+		}
+		file { "/etc/systemd/system/${service}.service.d/java-home.conf":
+			ensure => 'file',
+			owner => 'root',
+			group => 'root',
+			mode => '0644',
+			content => "[Service]
+# Fix service not starting with oracle java
+Environment=JAVA_HOME=${java_home}
+",
+			before => Package['tomcat'],
+			notify => Exec['systemctl-daemon-reload'],
+		}
+		Exec['systemctl-daemon-reload'] -> Package['tomcat']
+	}
+
+  if $::osfamily == 'Debian' and $package in ['tomcat7', 'tomcat8'] {
     augeas { "tomcat7-java7-setup":
       context => "/files/etc/default/$package",
       changes => [
