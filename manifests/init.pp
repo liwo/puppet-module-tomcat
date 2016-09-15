@@ -51,6 +51,19 @@ class tomcat (
     require => Package['tomcat'],
     notify => Service['tomcat'],
   }
+  case $::lsbdistcodename {
+    'trusty': {
+      if $authbind == 'yes' {
+        # See http://stackoverflow.com/questions/23272666/tomcat7-bind-to-port-80-fails-in-ubuntu-14-04lts
+        file { "/etc/authbind/byport/${port}":
+          ensure => 'file',
+          owner => $user,
+          mode => '0500',
+          notify => Service['tomcat'],
+        }
+      }
+    }
+  }
 
   $java_opts_xmx = $xmx ? {
     undef => '',
