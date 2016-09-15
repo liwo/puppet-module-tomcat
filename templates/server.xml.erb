@@ -74,7 +74,7 @@
                URIEncoding="UTF-8"
                redirectPort="<%= @ssl_port %>"
                <%- if @connector_options -%>
-               <%- @connector_options.each do | option, value | -%>
+               <%- @connector_options.sort_by { |option, value | option }.each do | option, value | -%>
                <%= option %>="<%= value %>"
                <%- end -%>
                <%- end -%>
@@ -100,7 +100,18 @@
     <!--
     <Connector port="8009" protocol="AJP/1.3" redirectPort="<%= @ssl_port %>" />
     -->
-
+    <%- if @additional_connectors
+        @additional_connectors.each do |connector| -%>
+    <Connector
+        port="<%= connector['port'] %>" 
+        protocol="<%= connector['protocol'] ? connector['protocol'] : 'HTTP/1.1' %>"
+        URIEncoding="<%= connector['uri_encoding'] ? connector['uri_encoding'] : 'UTF-8' %>"
+        <%- connector.reject { |option, value| ['port', 'protocol', 'uri_encoding'].include? option }.sort_by { |option, value | option }.each do | option, value | -%>
+        <%= option %>="<%= value %>"
+        <%- end -%>
+        />
+    <%- end
+    end -%>
 
     <!-- An Engine represents the entry point (within Catalina) that processes
          every request.  The Engine implementation for Tomcat stand alone
@@ -144,10 +155,26 @@
              Documentation at: /docs/config/valve.html
              Note: The pattern used is equivalent to using pattern="common" -->
         <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
-               prefix="localhost_access_log." suffix=".txt"
+               prefix="localhost_access_log." suffix=".log"
                pattern="%h %l %u %t &quot;%r&quot; %s %b" />
 
       </Host>
+      <%- if @additional_hosts
+          @additional_hosts.each do |host| -%>
+
+      <Host name="<%= host['name'] %>"  appBase="<%= host['appBase'] ? host['appBase'] : 'webapps' %>"
+            unpackWARs="<%= host['unpackWARs'] ? host['unpackWARs'] : 'true' %>" autoDeploy="<%= host['autoDeploy'] ? host['autoDeploy'] : 'true' %>">
+
+        <!-- Access log processes all example.
+             Documentation at: /docs/config/valve.html
+             Note: The pattern used is equivalent to using pattern="common" -->
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="<%= host['name'] %>_access_log." suffix=".log"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+
+      </Host>
+      <%- end
+        end -%>
     </Engine>
   </Service>
 </Server>

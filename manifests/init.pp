@@ -7,6 +7,8 @@ class tomcat (
   $java_opts = undef,
   $xms = undef,
   $xmx = '128m',
+  $additional_hosts = undef,
+  $additional_connectors = undef,
 ) inherits tomcat::params {
   include java
 
